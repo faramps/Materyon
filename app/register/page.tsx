@@ -24,6 +24,7 @@ export default function RegisterPage() {
         )}
 
         <form action={formAction} className="space-y-4">
+
           <div>
             <label className="text-xs text-slate-300 mb-1 block">Ad Soyad</label>
             <input name="fullName" className="input-field" />
@@ -32,6 +33,14 @@ export default function RegisterPage() {
           <div>
             <label className="text-xs text-slate-300 mb-1 block">Telefon</label>
             <input name="phone" className="input-field" />
+          </div>
+
+          {/* ✔️ Opsiyonel Firma Alanı */}
+          <div>
+            <label className="text-xs text-slate-300 mb-1 block">
+              Firma (Opsiyonel)
+            </label>
+            <input name="company" className="input-field" />
           </div>
 
           <div>

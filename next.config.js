@@ -1,15 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbo: false, // 🔥 TURBOPACK KAPALI
+  reactStrictMode: true,
+
+  // Image izinleri
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "qjmrvrlicniqcpdgqpsg.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
-  webpack: true, // 🔥 WEBPACK AÇIK
-  reactCompiler: true,
 };
 
 module.exports = nextConfig;
-module.exports = {
-  serverActions: {
-    bodySizeLimit: '200mb', // ister 20mb de yapabilirsin
-  },
-};

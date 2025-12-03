@@ -1,10 +1,10 @@
-'use client'; 
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, type Variants, type TargetAndTransition } from 'framer-motion';
 
-type CustomVariantFunction = (custom: 'left' | 'right') => TargetAndTransition;
+type CustomVariantFunction = (custom: "left" | "right") => TargetAndTransition;
 
 interface SplitVariants extends Variants {
   hoverState: CustomVariantFunction;
@@ -22,86 +22,81 @@ const InteractiveSplitSection = () => {
   const variants: SplitVariants = useMemo(() => ({
     initial: {
       flexGrow: 1,
-      transition: { duration: 0.2 }
+      transition: { duration: 0.25 },
     },
     hoverState: (side) => ({
-      flexGrow: activeSide === side ? 1.2 : 0.8,
-      transition: { duration: 0.2, ease: "easeOut" }
+      flexGrow: activeSide === side ? 1.25 : 0.75,
+      transition: { duration: 0.25, ease: "easeOut" },
     }),
     fullScreen: (side) => ({
       width: "100vw",
       height: "100vh",
-      left: side === 'left' ? 0 : 'auto',
-      right: side === 'right' ? 0 : 'auto',
+      left: side === "left" ? 0 : "auto",
+      right: side === "right" ? 0 : "auto",
       top: 0,
       position: "fixed",
       zIndex: 50,
-      transition: { duration: 0.3, ease: [0.6, 0.01, -0.05, 0.9] }
+      transition: { duration: 0.35, ease: [0.6, 0.01, -0.05, 0.9] },
     }),
     hiddenOnAnimate: {
       opacity: 0,
-      pointerEvents: 'none',
-      transition: { duration: 0.1 }
-    }
+      filter: "blur(4px)",
+      pointerEvents: "none",
+      transition: { duration: 0.15 },
+    },
   }), [activeSide]);
 
-  const handleImageClick = (side: 'left' | 'right') => {
+  const handleClick = (side: "left" | "right") => {
     setActiveSide(side);
     setIsAnimating(true);
 
     setTimeout(() => {
-      router.push(side === 'left' ? '/projeler' : '/hammaddeler');
-    }, 300);
+      router.push(side === "left" ? "/kategori/makineler" : "/kategori/hammaddeler");
+    }, 350);
   };
 
   return (
-    <section className="relative w-full h-screen">
+    <section className="relative w-full h-[80vh] rounded-2xl overflow-hidden px-4">
       <div
-        className="flex flex-col lg:flex-row w-full h-full overflow-hidden"
+        className="flex flex-col lg:flex-row w-full h-full overflow-hidden rounded-2xl border border-slate-800"
         onMouseLeave={() => !isAnimating && setActiveSide(null)}
       >
-        {/* SOL - PROJELER */}
+        {/* SOL */}
         <MotionSection
-          className="relative h-full cursor-pointer bg-cover bg-left flex items-center justify-center transition-all duration-0 bg-black"
-          style={{ backgroundImage: "url(/img/mainbg1.webp)" }}
-          onMouseEnter={() => !isAnimating && setActiveSide('left')}
-          onClick={() => handleImageClick('left')}
+          className="relative h-full cursor-pointer bg-cover bg-center flex items-center justify-center"
+          style={{ backgroundImage: "url(/img/onurhan-makina-3.jpg)" }}  // ✨ Karartma kaldırıldı
+          onMouseEnter={() => !isAnimating && setActiveSide("left")}
+          onClick={() => handleClick("left")}
           initial="initial"
           animate={
-            (activeSide === null && !isAnimating) ? "initial" :
-            (isAnimating && activeSide === 'left') ? "fullScreen" :
-            (isAnimating && activeSide !== 'left') ? "hiddenOnAnimate" :
-            "hoverState"
+            !isAnimating ? (activeSide ? "hoverState" : "initial") :
+            activeSide === "left" ? "fullScreen" : "hiddenOnAnimate"
           }
           custom="left"
           variants={variants}
         >
-          <div className="text-white font-bold text-5xl text-center z-20 p-8 bg-black bg-opacity-80">
-            Makineler
-          </div>
-          <div className="absolute right-0 top-0 h-full w-0.5 bg-black z-10 hidden lg:block"></div>
+          <h2 className="text-2xl md:text-3xl font-bold bg-black/20 px-10 py-4 rounded-lg backdrop-blur-sm ">
+            Makine ilanları için tıklayınız
+          </h2>
         </MotionSection>
 
-        {/* SAĞ - HAMMADDELER */}
+        {/* SAĞ */}
         <MotionSection
-          className="relative h-full cursor-pointer bg-cover bg-right flex items-center justify-center transition-all duration-0 bg-black"
-          style={{ backgroundImage: "url(/img/onurhan-makina-3.jpg)" }}
-          onMouseEnter={() => !isAnimating && setActiveSide('right')}
-          onClick={() => handleImageClick('right')}
+          className="relative h-full cursor-pointer bg-cover bg-center flex items-center justify-center"
+          style={{ backgroundImage: "url(/img/mainbg1.webp)" }}  // ✨ Karartma kaldırıldı
+          onMouseEnter={() => !isAnimating && setActiveSide("right")}
+          onClick={() => handleClick("right")}
           initial="initial"
           animate={
-            (activeSide === null && !isAnimating) ? "initial" :
-            (isAnimating && activeSide === 'right') ? "fullScreen" :
-            (isAnimating && activeSide !== 'right') ? "hiddenOnAnimate" :
-            "hoverState"
+            !isAnimating ? (activeSide ? "hoverState" : "initial") :
+            activeSide === "right" ? "fullScreen" : "hiddenOnAnimate"
           }
           custom="right"
           variants={variants}
         >
-          <div className="text-white font-bold text-5xl text-center z-20 p-8 bg-black bg-opacity-80">
-            Hammaddeler
-          </div>
-          <div className="absolute left-0 top-0 h-full w-0.5 bg-black z-10 hidden lg:block"></div>
+          <h2 className="text-2xl md:text-3xl font-bold bg-black/20 px-10 py-4 rounded-lg backdrop-blur-sm ">
+            Hammadde ilanları için tıklayınız
+          </h2>
         </MotionSection>
       </div>
     </section>

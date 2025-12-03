@@ -1,8 +1,9 @@
 "use server";
 
 import sharp from "sharp";
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/supabase/slugify";
+import { createSupabaseServerActionClient } from "@/lib/supabase/server";
+import { getLocationName } from "@/lib/supabase/geocode";  // 👈 yeni import
 
 export async function createListing(formData: FormData) {
   const supabase = await createSupabaseServerActionClient();
@@ -23,6 +24,9 @@ export async function createListing(formData: FormData) {
 
   const finalImages: string[] = [];
 
+  // ----------------------------
+  // 🖼 RAW → WebP dönüşüm
+  // ----------------------------
   for (const rawPath of rawPaths) {
     const { data: rawFile } = await supabase.storage
       .from("listings")
@@ -40,7 +44,6 @@ export async function createListing(formData: FormData) {
       contentType: "image/webp",
     });
 
-    // RAW dosyasını sil
     await supabase.storage.from("listings").remove([rawPath]);
 
     finalImages.push(
@@ -48,7 +51,23 @@ export async function createListing(formData: FormData) {
     );
   }
 
-  await supabase.from("listings").insert({
+  // ----------------------------
+  // 📍 Reverse Geocoding (şehir + ilçe)
+  // ----------------------------
+  const { city, district, address } = await getLocationName(
+    location.lat,
+    location.lng
+  );
+
+  // ----------------------------
+  // 🏷 SLUG
+  // ----------------------------
+  const slug = `${slugify(title)}-${Date.now()}`;
+
+  // ----------------------------
+  // 📥 DB INSERT
+  // ----------------------------
+  const { error } = await supabase.from("listings").insert({
     user_id: user.id,
     title,
     description,
@@ -56,8 +75,13 @@ export async function createListing(formData: FormData) {
     category,
     location,
     images: finalImages,
-    slug: `${slugify(title)}-${Date.now()}`,
+    slug,
+    city,       // 👈 artık ekleniyor
+    district,   // 👈 artık ekleniyor
+    address,    // isteğe bağlı
   });
 
-  return { success: true };
+  if (error) return { error: error.message };
+
+  return { success: true, slug };
 }

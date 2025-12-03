@@ -1,28 +1,82 @@
-import Link from "next/link";
 import ImageGallery from "@/app/components/listing/ImageGallery";
 import MapDetail from "@/app/components/listing/MapDetail";
-import { getListingWithSeller } from "@/lib/supabase/listings";
+import ShareButton from "@/app/components/listing/ShareButton";
+
+import { createSupabaseReadOnlyClient } from "@/lib/supabase/server";
 import { getCategoryNameById } from "@/lib/supabase/categories";
 
-export default async function ListingDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  // URL parametresi
+
+// ============================================================
+//  METADATA DİNAMİK
+// ============================================================
+
+export async function generateMetadata({ params }: any) {
   const { slug } = await params;
 
-  // 🔥 slug-id yapısından ID'yi çöz
-  // Örn: "hdpe-granul-makinesi-21c316dc8-b68f-41ca-8288-2d23589f2788"
- const id = slug.slice(-36);
- // SON eleman ID'dir
+  const supabase = await createSupabaseReadOnlyClient();
 
-  console.log("ÇÖZÜLEN ID:", id);
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-  // 🔥 ilan + satıcı çek
-  const result = await getListingWithSeller(id!);
+  if (!listing) {
+    return {
+      title: "İlan bulunamadı",
+      description: "Aradığınız ilan bulunamadı.",
+    };
+  }
 
-  if (!result) {
+  const title = `${listing.title} | Materyon`;
+
+  const description =
+    listing.description.length > 150
+      ? listing.description.slice(0, 150) + "..."
+      : listing.description;
+
+  const ogImage = listing.images?.[0] ?? "/default-og.jpg";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [ogImage],
+      url: `${process.env.NEXT_PUBLIC_SITE_URL}/ilan/${listing.slug}`,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
+}
+
+
+
+// ============================================================
+//  SAYFA
+// ============================================================
+
+export default async function ListingDetailPage(
+  props: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await props.params;
+
+  const supabase = await createSupabaseReadOnlyClient();
+
+  // === İLANI ÇEK ===
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (!listing) {
     return (
       <div className="text-center py-20 text-slate-300 text-lg">
         İlan bulunamadı.
@@ -30,57 +84,110 @@ export default async function ListingDetailPage({
     );
   }
 
-  const { listing, seller } = result;
+  // === TÜM KATEGORİLERİ ÇEK (breadcrumb için) ===
+  const { data: allCategoriesRaw } = await supabase
+    .from("categories")
+    .select("*");
 
-  // 🔥 Kategori adını çek
+  const allCategories = allCategoriesRaw ?? [];
+
+  const currentCategory = allCategories.find(
+    (c: any) => c.id === listing.category
+  );
+
+  function buildChain(cat: any) {
+    const chain: any[] = [];
+    let cur = cat;
+
+    while (cur) {
+      chain.unshift(cur);
+      cur = allCategories.find((c: any) => c.id === cur.parent_id);
+    }
+
+    return chain;
+  }
+
+  const chain = currentCategory ? buildChain(currentCategory) : [];
+
+  // === SATICI BİLGİLERİ ===
+  const { data: seller } = await supabase
+    .from("profiles")
+    .select("id, full_name, phone, company")
+    .eq("id", listing.user_id)
+    .single();
+
+  // === KATEGORİ ADI ===
   const categoryName =
     listing.category && (await getCategoryNameById(listing.category));
 
+
+
+  // ============================================================
+  //  RENDER
+  // ============================================================
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
 
-      {/* 🔥 BREADCRUMB */}
-      <nav className="text-sm text-slate-400 flex items-center gap-2" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-slate-200 transition">Anasayfa</Link>
-        <span>/</span>
+      {/* Breadcrumb */}
+      <nav className="text-sm text-slate-400 flex items-center gap-2">
+        <a href="/" className="hover:text-white">Anasayfa</a>
+        {chain.length > 0 && <span>/</span>}
 
-        <span className="hover:text-slate-200 transition">
-          {categoryName ?? "Kategori"}
-        </span>
-
-        <span>/</span>
-
-        <span className="text-slate-200 line-clamp-1">
-          {listing.title}
-        </span>
+        {chain.map((c, i) => (
+          <span key={c.id} className="flex items-center gap-2">
+            <a
+              href={"/kategori/" + chain.slice(0, i + 1).map(q => q.slug).join("/")}
+              className="hover:text-white"
+            >
+              {c.name}
+            </a>
+            {i < chain.length - 1 && <span>/</span>}
+          </span>
+        ))}
       </nav>
 
-      {/* 🔥 BAŞLIK */}
-      <h1 className="text-3xl font-bold tracking-tight text-white">
-        {listing.title}
-      </h1>
+      {/* Başlık */}
+      <h1 className="text-3xl font-bold text-white">{listing.title}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-        {/* 🔥 SOL TARAF */}
-        <div className="lg:col-span-2 space-y-10">
+        {/* SOL TARAF — GÖRSELLER + AÇIKLAMA */}
+        <div className="lg:col-span-2 space-y-6">
           <ImageGallery images={listing.images ?? []} />
 
-          <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Açıklama</h2>
-            <p className="text-slate-300 leading-relaxed whitespace-pre-line">
+          <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <h2 className="text-xl font-semibold text-white">Açıklama</h2>
+            <p className="text-slate-300 whitespace-pre-line">
               {listing.description}
             </p>
           </div>
         </div>
 
-        {/* 🔥 SAĞ TARAF */}
+
+        {/* SAĞ TARAF — İLAN BİLGİLERİ */}
         <div className="space-y-6">
-          <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-sm">
-            <h3 className="text-lg font-semibold text-white mb-4">İlan Bilgileri</h3>
+          <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <h3 className="text-lg font-semibold text-white">İlan Bilgileri</h3>
 
             <table className="w-full text-sm border-separate border-spacing-y-3">
               <tbody>
+
+                {/* Satıcı adı */}
+                {seller?.full_name && (
+                  <tr>
+                    <td className="text-slate-400 w-1/3">Satıcı</td>
+                    <td className="text-slate-200 font-medium">{seller.full_name}</td>
+                  </tr>
+                )}
+
+                {/* Firma adı (opsiyonel) */}
+                {seller?.company && (
+                  <tr>
+                    <td className="text-slate-400">Firma</td>
+                    <td className="text-slate-200">{seller.company}</td>
+                  </tr>
+                )}
 
                 {/* Fiyat */}
                 <tr>
@@ -90,52 +197,38 @@ export default async function ListingDetailPage({
                   </td>
                 </tr>
 
-                {/* İlan No */}
+                {/* Kategori */}
                 <tr>
-                  <td className="text-slate-400">İlan No</td>
-                  <td className="text-slate-200 font-medium">
-                    {listing.id}
-                  </td>
+                  <td className="text-slate-400">Kategori</td>
+                  <td className="text-slate-200">{categoryName ?? "-"}</td>
                 </tr>
 
-                {/* Eklenme */}
+                {/* Tarih */}
                 <tr>
-                  <td className="text-slate-400">Eklenme</td>
-                  <td className="text-slate-200 font-medium">
+                  <td className="text-slate-400">Tarih</td>
+                  <td className="text-slate-200">
                     {new Date(listing.created_at).toLocaleDateString("tr-TR")}
                   </td>
                 </tr>
 
-                {/* Satıcı */}
+                {/* Konum */}
                 <tr>
-                  <td className="text-slate-400">Satıcı</td>
-                  <td className="text-slate-200 font-medium">
-                    {seller.full_name ?? "-"}
+                  <td className="text-slate-400">Konum</td>
+                  <td className="text-slate-200">
+                    {listing.city ?? "-"} / {listing.district ?? "-"}
                   </td>
                 </tr>
 
                 {/* Telefon */}
-                <tr>
-                  <td className="text-slate-400">Telefon</td>
-                  <td className="text-slate-200 font-medium">
-                    {seller.phone ?? "-"}
-                  </td>
-                </tr>
-
-                {/* Kategori */}
-                <tr>
-                  <td className="text-slate-400">Kategori</td>
-                  <td className="text-slate-200 font-medium">
-                    {categoryName ?? "-"}
-                  </td>
-                </tr>
-
-                {/* Alt kategori (varsa) */}
-                {listing.subcategory && (
+                {seller?.phone && (
                   <tr>
-                    <td className="text-slate-400">Alt Kategori</td>
-                    <td className="text-slate-200 font-medium">
-                      {listing.subcategory}
+                    <td colSpan={2}>
+                      <a
+                        href={`tel:${seller.phone}`}
+                        className="block text-center bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg transition font-medium mt-2"
+                      >
+                        📞 Telefon Et
+                      </a>
                     </td>
                   </tr>
                 )}
@@ -143,28 +236,19 @@ export default async function ListingDetailPage({
               </tbody>
             </table>
 
-            {/* Telefon Et */}
-            {seller.phone && (
-              <a
-                href={`tel:${seller.phone}`}
-                className="mt-5 block text-center bg-emerald-600 hover:bg-emerald-700 
-                text-white py-2 rounded-lg transition font-medium"
-              >
-                Telefon Et
-              </a>
-            )}
+            <ShareButton title={listing.title} />
           </div>
 
-          {/* 🔥 HARİTA */}
+
+          {/* Konum */}
           {listing.location && (
-            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-sm space-y-4">
-              <h3 className="text-lg font-semibold text-white">
-                Konum Haritası
-              </h3>
+            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-xl space-y-3">
+              <h3 className="text-lg font-semibold text-white">Konum</h3>
               <MapDetail location={listing.location} />
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

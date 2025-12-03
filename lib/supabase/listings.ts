@@ -18,7 +18,7 @@ export type Listing = {
   location: { lat: number; lng: number };
   created_at: string;
   user_id: string;
-  slug: string; // 🔥 SLUG EKLENDİ
+  slug: string;
 };
 
 export type Seller = {
@@ -28,20 +28,20 @@ export type Seller = {
 };
 
 // ---------------------------
-// GET LISTING + SELLER
+// GET LISTING + SELLER (SLUG İLE)
 // ---------------------------
 
-export async function getListingWithSeller(id: string) {
+export async function getListingWithSellerBySlug(slug: string) {
   const supabase = await createSupabaseReadOnlyClient();
 
-  // 🔥 İlanı çek
-  const { data: listing, error } = await supabase
+  // 🔥 Slug ile ilanı çek
+  const { data: listing } = await supabase
     .from("listings")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
-  if (error || !listing) return null;
+  if (!listing) return null;
 
   // 🔥 Satıcı bilgisi
   const { data: seller } = await supabase
@@ -55,3 +55,4 @@ export async function getListingWithSeller(id: string) {
     seller: seller as Seller,
   };
 }
+// ---------------------------

@@ -9,7 +9,11 @@ interface Category {
   parent_id: string | null;
 }
 
-export default function CategorySelector() {
+type Props = {
+  onSelect?: (id: string) => void;
+};
+
+export default function CategorySelector({ onSelect }: Props) {
   const [levels, setLevels] = useState<Category[][]>([]);
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -25,31 +29,26 @@ export default function CategorySelector() {
 
     const { data } = await query;
 
-    // ❗ Eğer bu seviyede hiç kategori yoksa (alt kategori yoksa) → dropdown ekleme
-    if (!data || data.length === 0) {
-      return; // BURASI SORUNU ÇÖZÜYOR
-    }
+    if (!data || data.length === 0) return;
 
-    // Seviye ekle
     setLevels((prev) => {
       const next = [...prev];
       next[levelIndex] = data;
       return next.slice(0, levelIndex + 1);
     });
 
-    // Bu seviyeden sonraki seçimleri sil
     setSelected((prev) => prev.slice(0, levelIndex));
   }
 
   async function handleSelect(levelIndex: number, id: string) {
-    // Seçilen kategori güncelle
     setSelected((prev) => {
       const next = [...prev];
       next[levelIndex] = id;
       return next;
     });
 
-    // Bir alt seviyeyi yüklemeye çalış
+    if (onSelect) onSelect(id);
+
     await loadLevel(id, levelIndex + 1);
   }
 
@@ -62,16 +61,20 @@ export default function CategorySelector() {
       {levels.map((categories, index) => (
         <select
           key={index}
-          className="w-full border p-3 rounded"
+          className="
+            w-full bg-slate-900/60 border border-white/10 text-slate-200
+            rounded-lg px-4 py-3 outline-none 
+            focus:ring-2 focus:ring-sky-500/50 transition
+          "
           value={selected[index] || ""}
           onChange={(e) => handleSelect(index, e.target.value)}
         >
-          <option value="">
+          <option className="text-slate-400" value="">
             {index === 0 ? "Ana kategori seç" : "Alt kategori seç"}
           </option>
 
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>
+            <option className="bg-slate-900 text-slate-200" key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}

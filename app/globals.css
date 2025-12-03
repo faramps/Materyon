@@ -1,42 +1,138 @@
-/* Tailwind V4 core import */
+/* Tailwind V4 core */
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/* Global body styling */
-body {
-  background: #020617; /* slate-950 */
-  color: #e2e8f0; /* slate-100 */
-  -webkit-font-smoothing: antialiased;
+@custom-variant dark (&:is(.dark *));
+
+/* ========================================================= */
+/* BODY — blueprint gradient + stacking FIX                   */
+/* ========================================================= */
+html, body {
+  overflow-x: hidden !important;
+  position: relative;
+  isolation: isolate; /* Sheet stacking için kritik */
+  margin: 0;
+  padding: 0;
 }
 
-/* Custom classes MUST be in @layer utilities */
+body {
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+
+  background: radial-gradient(circle at top left,
+    #0b1b2f 0%,
+    #071627 40%,
+    #020617 100%
+  );
+
+  z-index: 0;
+}
+
+/* ========================================================= */
+/* GRID — tüm sayfa boyunca blueprint çizgileri              */
+/* ========================================================= */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+
+  background-size: 42px 42px;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* ========================================================= */
+/* MOVING GLOW — tüm sayfa boyunca blueprint ışığı           */
+/* ========================================================= */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 300%;
+  height: 100%;
+  z-index: -10;
+  pointer-events: none;
+
+  background: radial-gradient(
+    circle at 30% 50%,
+    rgba(56, 189, 248, 0.12) 0%,
+    rgba(56, 189, 248, 0.05) 20%,
+    rgba(56, 189, 248, 0) 60%
+  );
+
+  animation: globalGlowMove 25s linear infinite;
+}
+
+@keyframes globalGlowMove {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(25%); }
+  100% { transform: translateX(0); }
+}
+
+/* ========================================================= */
+/* Vizyon / Kart Hover Draw-Line                              */
+/* ========================================================= */
+@keyframes movingLight {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(120%); }
+}
+
+.animate-movingLight {
+  animation: movingLight 2.8s linear infinite;
+}
+
+/* ========================================================= */
+/* Fade Up                                                    */
+/* ========================================================= */
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.9s ease forwards;
+}
+
+/* ========================================================= */
+/* Button & Input                                             */
+/* ========================================================= */
 @layer utilities {
 
-  .glass-panel {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-  }
-
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium 
-      bg-sky-500 text-white hover:bg-sky-400 transition;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold
+      bg-sky-500 text-white hover:bg-sky-400 transition shadow-[0_0_15px_rgba(56,189,248,0.4)];
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium 
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium
       border border-white/10 bg-white/5 hover:bg-white/10 text-slate-100 transition;
   }
 
   .input-field {
     @apply w-full rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-sm
-      text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2
-      focus:ring-sky-500/70 focus:border-sky-500/70;
+      text-slate-100 placeholder:text-slate-400
+      focus:outline-none focus:ring-2 focus:ring-sky-500/70 focus:border-sky-500/70;
   }
 
-  .page-shell {
-    background: linear-gradient(to bottom, #020617, #020617, #0f172a);
-    min-height: 100vh;
+  /* MOBILE MENU UI */
+  .mobile-link {
+    @apply text-[17px] text-slate-200 hover:text-sky-400 pl-1 transition relative font-medium;
+  }
+
+  .mobile-auth-btn {
+    @apply px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-sm
+      text-sky-300 font-semibold text-center hover:bg-white/20 hover:text-sky-400 transition;
+  }
+
+  .mobile-auth-btn-primary {
+    @apply px-4 py-2 rounded-xl bg-sky-500 text-white text-sm font-bold text-center
+      hover:bg-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.7)] transition;
   }
 }
