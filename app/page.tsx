@@ -177,10 +177,33 @@ export default function HomePage() {
     shadow-[0_0_35px_rgba(56,189,248,0.15)]
   ">
     <form
-      action="/api/feedback"
-      method="POST"
-      className="flex flex-col gap-6"
-    >
+  onSubmit={async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.get("name"),
+        email: formData.get("email"),
+        message: formData.get("message"),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Mesaj başarıyla gönderildi ✅");
+      e.currentTarget.reset();
+    } else {
+      alert("Gönderme başarısız ❌");
+    }
+  }}
+  className="flex flex-col gap-6"
+>
+
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
