@@ -3,8 +3,18 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, email, message } = body;
+    const formData = await req.formData();
+
+    const name = formData.get("name")?.toString();
+    const email = formData.get("email")?.toString();
+    const message = formData.get("message")?.toString();
+
+    if (!name || !email || !message) {
+      return NextResponse.json(
+        { error: "Eksik alan var" },
+        { status: 400 }
+      );
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -31,6 +41,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("MAIL HATASI:", error);
-    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Sunucu hatası" },
+      { status: 500 }
+    );
   }
 }
