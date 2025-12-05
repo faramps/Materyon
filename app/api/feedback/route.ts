@@ -16,15 +16,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false, // 587 için doğru
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+   const transporter = nodemailer.createTransport({
+  host: "smtp.zoho.eu",
+  port: 465,
+  secure: true, // 🔥 465 için TRUE olmak zorunda
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+
 
     await transporter.sendMail({
       from: `"Materyon İletişim" <${process.env.SMTP_USER}>`,
