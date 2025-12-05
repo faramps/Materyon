@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
@@ -5,14 +6,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, email, message } = body;
 
-    if (!name || !email || !message) {
-      return Response.json({ error: "Eksik alan var" }, { status: 400 });
-    }
-
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
-      secure: false,
+      secure: false, // 587 için false
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -21,29 +18,19 @@ export async function POST(req: Request) {
 
     await transporter.sendMail({
       from: `"Materyon İletişim" <${process.env.SMTP_USER}>`,
-      to: process.env.SEND_TO,
+      to: process.env.CONTACT_RECEIVER,
       subject: "Yeni Geri Bildirim",
-      text: `
-İsim: ${name}
-E-posta: ${email}
-Mesaj: ${message}
-      `,
       html: `
-        <h2>Yeni Geri Bildirim</h2>
-        <p><strong>İsim:</strong> ${name}</p>
-        <p><strong>E-posta:</strong> ${email}</p>
-        <p><strong>Mesaj:</strong><br>${message}</p>
+        <b>Ad:</b> ${name}<br/>
+        <b>Email:</b> ${email}<br/>
+        <b>Mesaj:</b><br/>
+        <p>${message}</p>
       `,
     });
 
-    return Response.json({ success: true });
-  } catch (e) {
-    console.error("Mail send error", e);
-    return Response.json({ error: "Sunucu hatası" }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("MAIL HATASI:", error);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
-}
-
-// GET endpoint test için
-export async function GET() {
-  return Response.json({ status: "ok" });
 }
