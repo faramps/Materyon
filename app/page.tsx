@@ -1,3 +1,4 @@
+"use client";
 import InteractiveSplitSection from "../components/InteractiveSplitSection";
 
 export const metadata = {
