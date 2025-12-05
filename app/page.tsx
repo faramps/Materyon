@@ -1,5 +1,7 @@
+import { Contact } from "lucide-react";
 import InteractiveSplitSection from "../components/InteractiveSplitSection";
-import FeedbackForm from "./components/FeedbackForm";
+import FeedbackForm from "./components/ContactSection";
+import ContactSection from "./components/ContactSection";
 
 export const metadata = {
   title: "Materyon – Endüstriyel Makine & Hammadde Pazarı",
@@ -74,7 +76,7 @@ export default function HomePage() {
           Görüş ve Önerileriniz
         </h2>
 
-        <FeedbackForm />
+        <ContactSection/>
       </section>
     </div>
   );
